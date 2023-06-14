@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="33375553-42b1-498f-b88c-7fdf7b526735" name="变更" comment="">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.~课程设计安排.pptx" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,6 +61,7 @@
       <workItem from="1686317698893" duration="819000" />
       <workItem from="1686405773628" duration="599000" />
       <workItem from="1686708165707" duration="1384000" />
+      <workItem from="1686712827430" duration="8000" />
     </task>
     <servers />
   </component>
