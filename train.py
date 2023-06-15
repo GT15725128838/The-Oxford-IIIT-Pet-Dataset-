@@ -1,5 +1,6 @@
 import os
 import cv2
+import datetime
 import numpy as np
 import torch
 import torch.nn as nn
@@ -62,11 +63,12 @@ if __name__ == '__main__':
     test_dataset = PetDataset(X_test, y_test)
 
     # 调用网络模型
-    model = Net()
+    model = Net(35)
 
     # 设置损失函数和优化器
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0,
+                                 amsgrad=False)
 
     # 加载训练数据
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
@@ -76,10 +78,13 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     # 迭代训练
+    print('-'*50)
+    print('Start of training')
     for epoch in range(num_epochs):
         running_loss = 0.0
         for images, labels in train_loader:
             images = images.to(device)
+            images = np.transpose(images, (0, 3, 1, 2))
             labels = labels.to(device)
 
             optimizer.zero_grad()
@@ -101,6 +106,7 @@ if __name__ == '__main__':
         with torch.no_grad():
             for images, labels in test_loader:
                 images = images.to(device)
+                images = np.transpose(images, (0, 3, 1, 2))
                 labels = labels.to(device)
 
                 outputs = model(images)
@@ -110,3 +116,14 @@ if __name__ == '__main__':
 
         accuracy = 100 * correct / total
         print('Test Accuracy: {:.2f}%'.format(accuracy))
+    # 训练结束
+    print('End of training')
+    print('-' * 50)
+
+    # 模型保存
+    # 获取当前日期和时间
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    # 添加时间戳到文件名中
+    save_path = f'./model_{timestamp}.pth'
+    # 保存整个模型
+    torch.save(model, save_path)
