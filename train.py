@@ -4,8 +4,6 @@ import datetime
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import Dataset, DataLoader
@@ -13,6 +11,13 @@ from net import Net
 
 
 def load_images_and_labels(dataset_dir):
+    """
+    加载数据，预处理数据
+    :param dataset_dir:
+    :return:
+    """
+    print('-' * 50)
+    print('Data loading...')
     images = []
     labels = []
     # 遍历图片
@@ -29,6 +34,8 @@ def load_images_and_labels(dataset_dir):
             image = image / 255.0
             images.append(image)
             labels.append(file_name.split('_')[0])
+    print('Loading completed')
+    print('-' * 50)
     return np.array(images), np.array(labels)
 
 
@@ -54,16 +61,20 @@ if __name__ == '__main__':
     # 标签编码
     label_encoder = LabelEncoder()
     labels_encoded = label_encoder.fit_transform(labels)
+    print("Number of labels:", len(set(labels_encoded)))
 
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(images, labels_encoded, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(images, labels_encoded, test_size=0.2, random_state=10)
 
     # 调用类加载图像和标签
     train_dataset = PetDataset(X_train, y_train)
     test_dataset = PetDataset(X_test, y_test)
+    print('-'*50)
+    print("Number of train_dataset:", len(train_dataset))
+    print("Number of test_dataset:", len(test_dataset))
 
     # 调用网络模型
-    model = Net(35)
+    model = Net(len(set(labels_encoded)))
 
     # 设置损失函数和优化器
     criterion = nn.CrossEntropyLoss()
@@ -78,7 +89,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     # 迭代训练
-    print('-'*50)
+    print('-' * 50)
     print('Start of training')
     for epoch in range(num_epochs):
         running_loss = 0.0
