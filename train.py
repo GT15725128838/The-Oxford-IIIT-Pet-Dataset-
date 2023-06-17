@@ -1,5 +1,6 @@
 import os
 import cv2
+import re
 import datetime
 import numpy as np
 import torch
@@ -26,14 +27,18 @@ def load_images_and_labels(dataset_dir):
             image_path = os.path.join(dataset_dir, file_name)
             # 读取图片
             image = cv2.imread(image_path)
-            # 转换成RGB模式
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             # 统一图片尺寸
-            image = cv2.resize(image, (224, 224))
+            image = cv2.resize(image, (256, 256))
             # 归一化
-            image = image / 255.0
+            min_val = np.min(image)
+            max_val = np.max(image)
+            image = (image - min_val) / (max_val - min_val)
             images.append(image)
-            labels.append(file_name.split('_')[0])
+
+            # 使用正则表达式提取名称
+            match_name = re.match(r"\D*", file_name).group()
+            label_name = match_name[0:-1]
+            labels.append(label_name)
     print('Loading completed')
     print('-' * 50)
     return np.array(images), np.array(labels)
@@ -61,10 +66,12 @@ if __name__ == '__main__':
     # 标签编码
     label_encoder = LabelEncoder()
     labels_encoded = label_encoder.fit_transform(labels)
+    # 保存编码
+    np.save('./label_encoder_classes.npy', label_encoder.classes_)
     print("Number of labels:", len(set(labels_encoded)))
 
     # 划分数据集
-    X_train, X_test, y_train, y_test = train_test_split(images, labels_encoded, test_size=0.2, random_state=10)
+    X_train, X_test, y_train, y_test = train_test_split(images, labels_encoded, test_size=0.3, random_state=10)
 
     # 调用类加载图像和标签
     train_dataset = PetDataset(X_train, y_train)
@@ -78,8 +85,7 @@ if __name__ == '__main__':
 
     # 设置损失函数和优化器
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0,
-                                 amsgrad=False)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # 加载训练数据
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
@@ -93,21 +99,33 @@ if __name__ == '__main__':
     print('Start of training')
     for epoch in range(num_epochs):
         running_loss = 0.0
+        correct = 0
+        total = 0
         for images, labels in train_loader:
             images = images.to(device)
+            # 调整形状
             images = np.transpose(images, (0, 3, 1, 2))
             labels = labels.to(device)
-
+            # 梯度清零
             optimizer.zero_grad()
-
+            # 前向传播
             outputs = model(images)
             loss = criterion(outputs, labels)
+            # 反向传播
             loss.backward()
+            # 执行下一步更新
             optimizer.step()
+            # 计算总loss（平均loss×样本数）
+            running_loss += loss.item() * labels.size(0)
+            # 准确度分析
+            _, predicted = torch.max(outputs.data, 1)
+            correct += (predicted == labels).sum().item()
 
-            running_loss += loss.item()
-        # 输出训练过程损失函数
-        print('Epoch [{}/{}], Loss: {:.4f}'.format(epoch + 1, num_epochs, running_loss / len(train_loader)))
+        accuracy = 100 * correct / len(train_loader)
+        # 迭代完一次打印LOSS与ACC
+        print('-'*50)
+        print('Epoch [{}/{}]: Loss: {:.4f}'.format(epoch + 1, num_epochs, running_loss / len(train_loader)))
+        print('Train Accuracy: {:.2f}%'.format(accuracy))
 
         # 测试集预测准确率
         test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
@@ -119,14 +137,15 @@ if __name__ == '__main__':
                 images = images.to(device)
                 images = np.transpose(images, (0, 3, 1, 2))
                 labels = labels.to(device)
-
+                # 前向传播
                 outputs = model(images)
+                # 准确度分析
                 _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-        accuracy = 100 * correct / total
+        accuracy = 100 * correct / len(test_loader)
         print('Test Accuracy: {:.2f}%'.format(accuracy))
+        print('-' * 50)
     # 训练结束
     print('End of training')
     print('-' * 50)
