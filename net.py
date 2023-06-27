@@ -24,12 +24,12 @@ class Net(nn.Module):
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         # 全连接层1
-        self.fc1 = nn.Linear(32 * 64 * 64, 256)
+        self.fc1 = nn.Linear(32 * 64 * 64, 1024)
         self.relu3 = nn.ReLU()
 
-        self.dropout = nn.Dropout(p=0.25)
+        self.dropout = nn.Dropout(p=0.5)
         # 全连接层2
-        self.fc2 = nn.Linear(256, num_classes)
+        self.fc2 = nn.Linear(1024, num_classes)
 
     def forward(self, x):
         x = self.conv1(x)

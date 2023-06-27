@@ -30,16 +30,24 @@ def load_images_and_labels(dataset_dir):
     images = []
     labels = []
     # 遍历图片
-    for file_name in sorted(os.listdir(dataset_dir)):
+    # 猫
+    cat_dir = dataset_dir + 'cat/'
+    for file_name in sorted(os.listdir(cat_dir)):
         if file_name.endswith('.jpg'):
-            image_path = os.path.join(dataset_dir, file_name)
+            image_path = os.path.join(cat_dir, file_name)
             # 读取图片, RGB
             image = Image.open(image_path).convert('RGB')
             images.append(image)
-            # 使用正则表达式提取名称
-            match_name = re.match(r"\D*", file_name).group()
-            label_name = match_name[0:-1]
-            labels.append(label_name)
+            labels.append('cat')
+    # 狗
+    dog_dir = dataset_dir + 'dog/'
+    for file_name in sorted(os.listdir(dog_dir)):
+        if file_name.endswith('.jpg'):
+            image_path = os.path.join(dog_dir, file_name)
+            # 读取图片, RGB
+            image = Image.open(image_path).convert('RGB')
+            images.append(image)
+            labels.append('dog')
     print('Loading completed')
     print('-' * 50)
     return images, np.array(labels)
@@ -70,7 +78,7 @@ if __name__ == '__main__':
     label_encoder = LabelEncoder()
     labels_encoded = label_encoder.fit_transform(labels)
     # 保存编码
-    np.save('./label_encoder_classes.npy', label_encoder.classes_)
+    np.save('./cat_dog_classes.npy', label_encoder.classes_)
     print("Number of labels:", len(set(labels_encoded)))
 
     # 划分数据集
